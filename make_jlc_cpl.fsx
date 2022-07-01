@@ -8,10 +8,6 @@ open FSharp.Data
 //, Schema="Designator (string), Val (string), Package (string), Mid X (decimal), Mid Y (decimal), Rotation (decimal), Layer (string)"
 type KicadPos = CsvProvider<const(__SOURCE_DIRECTORY__ + "/kicad_pos_sample.csv"), HasHeaders=true>
 
-// Filter Designator: REF**
-// Filter Val: breakaway, MountingHole, DNF, OLED-I2C
-// Package: MX-Hotswap flip to top
-
 let hasPlaceableValue (row: KicadPos.Row) =
     let ignoredValues =
         Set.ofList [ "OLED-I2C"
@@ -33,15 +29,11 @@ let flipTopHotswaps (row: KicadPos.Row) =
     match row with
     | r when r.Side = "top" && r.Package.Contains "Hotswap" ->
         KicadPos.Row(r.Ref, r.Val, r.Package, -r.PosX, r.PosY, r.Rot, "bottom")
-    | _ -> KicadPos.Row(row.Ref, row.Val, row.Package, row.PosX, row.PosY, row.Rot, row.Side)
+    | _ -> row
 
 
 let convertPos (inputCsv: string) (outputCsv: string) =
     let posInput = KicadPos.Load(inputCsv)
-
-    printfn "Header: %A" posInput.Headers
-    printfn "%A" (posInput.Rows |> Seq.length)
-    // TODO: Update header
 
     let transformedPos =
         posInput
@@ -49,10 +41,15 @@ let convertPos (inputCsv: string) (outputCsv: string) =
             .Filter(hasPlaceableRef)
             .Map(flipTopHotswaps)
 
-    printfn "Transformed: %A" (transformedPos.SaveToString())
+    //printfn "Transformed: %A" (transformedPos.SaveToString())
+
+    let lines = transformedPos.SaveToString().Split()
+    let newHeader = "Designator,Val,Package,Mid X,Mid Y,Rotation,Layer"
+    Array.set lines 0 newHeader
+    printfn "%A" lines
+
+    File.WriteAllLines(outputCsv, lines)
 
 match fsi.CommandLineArgs with
-| [| scriptName; inputCsv; outputCsv |] ->
-    printfn "POS File: %s" inputCsv
-    convertPos inputCsv outputCsv
+| [| scriptName; inputCsv; outputCsv |] -> convertPos inputCsv outputCsv
 | _ -> printfn "Usage: ./make_jlc_cpl.fsx [Input CSV] [Output CSV]"
