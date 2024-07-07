@@ -60,7 +60,7 @@ let fixRotations (row: KicadPos.Row) =
     match row with
     | r when r.Package.Contains "Hotswap" -> (rotate 180m >> offset 0.635m -3.81m) r
     //| r when r.Package.Contains "HRO-TYPE-C" -> (rotate 180m >> offset 0m 5.0m) r
-    | r when r.Package = "USB_C_Receptacle_HRO_TYPE-C-31-M-12" -> (rotate 180m >> offset 0m 1m) r
+    | r when r.Package = "USB_C_Receptacle_HRO_TYPE-C-31-M-12" -> (rotate 180m >> offset 0m 1.25m) r
     | r when r.Package = "SOT-23" -> rotate 180m r
     | r when r.Package = "SOIC-8_5.23mm-USON-8_2x3mm" -> rotate 90m r
     | r when r.Package.Contains "SOIC-8" -> rotate -90m r
