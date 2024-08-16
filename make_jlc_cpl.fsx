@@ -80,7 +80,7 @@ let fixRotations (row: KicadPos.Row) =
     //| r when r.Val = "2N7002" -> rotate 180m r
     | _ -> row
 
-let convertPos (inputCsv: string) (outputCsv: string) =
+let convertPos (inputCsv: string) (outputCsv: string option) =
     let posInput = KicadPos.Load(inputCsv)
 
     let transformedPos =
@@ -103,8 +103,24 @@ let convertPos (inputCsv: string) (outputCsv: string) =
     Array.set lines 0 newHeader
     printfn "%A" lines
 
-    File.WriteAllLines(outputCsv, lines)
+    let outputFile =
+        match outputCsv with
+        | Some outputCsv -> outputCsv
+        | None ->
+            let dir = Path.GetDirectoryName(inputCsv)
+            let name = Path.GetFileNameWithoutExtension(inputCsv)
+
+            let newName =
+                if name.Contains("all-pos") then
+                    name.Replace("all-pos", "cpl")
+                else
+                    name + "-cpl"
+
+            Path.Combine(dir, newName + ".csv")
+
+    File.WriteAllLines(outputFile, lines)
 
 match fsi.CommandLineArgs with
-| [| scriptName; inputCsv; outputCsv |] -> convertPos inputCsv outputCsv
+| [| scriptName; inputCsv; outputCsv |] -> convertPos inputCsv (Some outputCsv)
+| [| scriptName; inputCsv |] -> convertPos inputCsv None
 | _ -> printfn "Usage: ./make_jlc_cpl.fsx [Input CSV] [Output CSV]"
